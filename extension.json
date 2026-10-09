@@ -1,0 +1,64 @@
+{
+    "$schema": "./node_modules/@pterodactyl/sdk/manifest.schema.json",
+    "id": "minecraft",
+    "name": "Minecraft",
+    "version": "1.0.0",
+    "requires": {
+        "panel": "^2.0.0-dev",
+        "sdk": "^2.0.0-beta.4",
+        "php": "^8.3"
+    },
+    "description": "Edit server.properties, manage players and share logs for Minecraft servers.",
+    "author": "Izuna Seikatsu",
+    "provider": "Minecraft\\MinecraftProvider",
+    "ui": {
+        "entry": "dist/client.js",
+        "mode": "native",
+        "prefix": "mc",
+        "screens": [
+            {
+                "id": "players",
+                "area": "server",
+                "path": "players",
+                "nav": {
+                    "label": "Players",
+                    "icon": "users",
+                    "order": 10
+                },
+                "permission": [
+                    "ext.minecraft.players-read"
+                ],
+                "when": {
+                    "eggFeatures": {
+                        "any": [
+                            "eula"
+                        ]
+                    },
+                    "runtime": true
+                }
+            },
+            {
+                "id": "properties",
+                "area": "server",
+                "path": "properties",
+                "nav": {
+                    "label": "Properties",
+                    "icon": "sliders-horizontal",
+                    "order": 11
+                },
+                "permission": [
+                    "ext.minecraft.properties-read"
+                ],
+                "when": {
+                    "eggFeatures": {
+                        "any": [
+                            "eula"
+                        ]
+                    },
+                    "runtime": true
+                }
+            }
+        ]
+    },
+    "icon": "pickaxe"
+}

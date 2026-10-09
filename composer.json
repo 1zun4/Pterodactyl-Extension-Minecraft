@@ -1,0 +1,11 @@
+{
+    "description": "Edit server.properties, manage players and share logs for Minecraft servers.",
+    "autoload": {
+        "psr-4": {
+            "Minecraft\\": "src/"
+        }
+    },
+    "config": {
+        "autoloader-suffix": "MinecraftExtension"
+    }
+}
