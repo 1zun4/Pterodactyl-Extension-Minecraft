@@ -19,13 +19,21 @@ final class LogController extends Controller
 
     public function index(Request $request, Server $server): JsonResponse
     {
-        abort_unless(
-            $request->user()?->can('ext.minecraft.logs-share', $server) || $request->user()?->can('ext.minecraft.logs-clean', $server),
-            403,
-            'You do not have permission to do that.',
-        );
+        $this->authorizeAny($request, $server, ['logs-read', 'logs-share', 'logs-clean']);
 
         return new JsonResponse(['files' => $this->logs->all($server), 'schedule' => $this->schedule($server)]);
+    }
+
+    public function show(Request $request, Server $server): JsonResponse
+    {
+        $this->authorizeAny($request, $server, ['logs-read']);
+        $path = (string) $request->validate(['path' => ['required', 'string', 'regex:'.self::PATH]])['path'];
+
+        try {
+            return new JsonResponse($this->logs->read($server, $path));
+        } catch (RuntimeException $exception) {
+            abort(422, $exception->getMessage());
+        }
     }
 
     public function share(Request $request, Server $server): JsonResponse
@@ -72,6 +80,18 @@ final class LogController extends Controller
         ]))->save();
 
         return new JsonResponse(['schedule' => $this->schedule($server)]);
+    }
+
+    /** @param list<string> $permissions */
+    private function authorizeAny(Request $request, Server $server, array $permissions): void
+    {
+        foreach ($permissions as $permission) {
+            if ($request->user()?->can("ext.minecraft.{$permission}", $server)) {
+                return;
+            }
+        }
+
+        abort(403, 'You do not have permission to do that.');
     }
 
     /** @return array<string, bool|int> */

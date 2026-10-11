@@ -20,8 +20,8 @@ The **Players** and **Properties** tabs show up on every server with a Minecraft
 ## Features
 
 - **Players**: online list, inventories, ender chests and statistics. Message, teleport, give items, kick, ban, whitelist and op in one click.
-- **Properties**: every `server.properties` setting with the right control, search, save and restart.
-- **Share log**: upload the console, `latest.log` or a crash report to [mclo.gs](https://mclo.gs).
+- **Properties**: every `server.properties` setting with the right control and help text, or edit the file as text.
+- **Logs**: read, search and filter every log and crash report, download them or share them on [mclo.gs](https://mclo.gs).
 - **Clean logs**: delete or archive old logs and crash reports, once or every day.
 - **Player count**: live count on the dashboard and a weekly activity heatmap.
 

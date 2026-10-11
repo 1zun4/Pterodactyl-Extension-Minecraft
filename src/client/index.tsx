@@ -11,7 +11,15 @@ function useIsGameServer({ server }: ScreenContext): boolean {
     const identifier = server?.attributes.identifier ?? '';
     const meta = useQuery({ queryKey: keys.meta(identifier), queryFn: () => getMeta(identifier), enabled: identifier !== '', staleTime: Infinity });
 
-    return meta.data?.proxy === false;
+    return meta.data?.proxy === false && !meta.data.hidden;
+}
+
+// Logs are useful on proxies too, so only the admin's hidden eggs are excluded.
+function useIsShown({ server }: ScreenContext): boolean {
+    const identifier = server?.attributes.identifier ?? '';
+    const meta = useQuery({ queryKey: keys.meta(identifier), queryFn: () => getMeta(identifier), enabled: identifier !== '', staleTime: Infinity });
+
+    return meta.data?.hidden === false;
 }
 
 export default definePterodactylExtension({
@@ -20,6 +28,7 @@ export default definePterodactylExtension({
 
         screens.register('players', () => import('./screens/PlayersScreen'), { visible: useIsGameServer });
         screens.register('properties', () => import('./screens/PropertiesScreen'), { visible: useIsGameServer });
+        screens.register('logs', () => import('./screens/LogsScreen'), { visible: useIsShown });
 
         slots.register('server.console.power.after', LogTools);
         slots.register('dashboard.serverRow.name.after', PlayerCount);

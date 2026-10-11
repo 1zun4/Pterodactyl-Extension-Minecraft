@@ -37,6 +37,7 @@ class MinecraftProvider extends ExtensionProvider
             'players-read' => 'View players, inventories, statistics and history.',
             'players-manage' => 'Message, teleport, heal, give items and change game modes.',
             'players-moderate' => 'Kick, ban, whitelist, op and wipe players.',
+            'logs-read' => 'Read logs and crash reports.',
             'logs-share' => 'Upload logs to mclo.gs.',
             'logs-clean' => 'Delete old logs and crash reports.',
         ]);
@@ -62,6 +63,10 @@ class MinecraftProvider extends ExtensionProvider
             ExtensionSettingDefinition::make('mclogs_url', 'mclogs_url', 'https://api.mclo.gs/1/log', ['required', 'url', 'max:255'])
                 ->label('mclo.gs API')
                 ->help('Endpoint for sharing logs. Change it for a self-hosted mclo.gs.'),
+            ExtensionSettingDefinition::make('hidden_eggs', 'hidden_eggs', [], [])
+                ->label('Hide the Minecraft screens on these eggs')
+                ->help('Egg IDs from Admin → Eggs, for eggs that have the EULA feature but are no Minecraft game servers.')
+                ->list(['integer', 'min:1'], 200),
         ]));
 
         $this->registerCommands([SamplePlayersCommand::class, CleanLogsCommand::class, PruneHistoryCommand::class]);

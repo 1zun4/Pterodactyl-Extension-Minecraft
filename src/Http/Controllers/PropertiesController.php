@@ -47,12 +47,24 @@ final class PropertiesController extends Controller
         return $this->response($contents);
     }
 
+    /** Saves the whole file as typed, for edits the form cannot express. */
+    public function replace(Request $request, Server $server): JsonResponse
+    {
+        $this->authorize($request, $server, 'properties-update');
+
+        $contents = (string) $request->validate(['contents' => ['present', 'nullable', 'string', 'max:65536', 'not_regex:/\x00/']])['contents'];
+        $this->panel->write($server, ServerFiles::PROPERTIES, $contents);
+
+        return $this->response($contents);
+    }
+
     private function response(?string $contents): JsonResponse
     {
         $properties = Properties::parse($contents ?? '');
 
         return new JsonResponse([
             'exists' => $contents !== null,
+            'raw' => $contents ?? '',
             'properties' => array_map(static fn (string $key, string $value): array => ['key' => $key, 'value' => $value], array_keys($properties), $properties),
         ]);
     }

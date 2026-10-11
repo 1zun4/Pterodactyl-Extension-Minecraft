@@ -15,6 +15,7 @@ import {
     ServerError,
     Spinner,
     Switch,
+    TextArea,
     TitledGreyBox,
     httpErrorToHuman,
     toast,
@@ -24,7 +25,7 @@ import {
     useServerPermission,
     useServerResources,
 } from '@pterodactyl/sdk';
-import { getProperties, keys, saveProperties } from '../api';
+import { getProperties, keys, saveProperties, saveRawProperties } from '../api';
 import { SECTIONS, describe, matches, type Property } from '../lib/properties';
 import Pill from '../components/Pill';
 import SectionHeading from '../components/SectionHeading';
@@ -42,15 +43,28 @@ export default function PropertiesScreen() {
     const [draft, setDraft] = useState<Record<string, string>>({});
     const [search, setSearch] = useState('');
     const [pendingRestart, setPendingRestart] = useState(false);
+    const [raw, setRaw] = useState<string | null>(null);
     const changes = Object.keys(draft).length;
+    const rawChanged = raw !== null && raw !== (query.data?.raw ?? '');
 
-    useNavigationBlocker(changes > 0);
+    useNavigationBlocker(changes > 0 || rawChanged);
 
     const save = useMutation({
         mutationFn: () => saveProperties(identifier, draft),
         onSuccess: (data) => {
             queryClient.setQueryData(keys.properties(identifier), data);
             setDraft({});
+            setPendingRestart(true);
+            toast.success('server.properties saved.');
+        },
+        onError: (error) => toast.error(httpErrorToHuman(error)),
+    });
+
+    const saveRaw = useMutation({
+        mutationFn: () => saveRawProperties(identifier, raw ?? ''),
+        onSuccess: (data) => {
+            queryClient.setQueryData(keys.properties(identifier), data);
+            setRaw(data.raw);
             setPendingRestart(true);
             toast.success('server.properties saved.');
         },
@@ -104,20 +118,37 @@ export default function PropertiesScreen() {
                     </p>
                 </div>
                 <div className='mc:mt-3 mc:flex mc:items-center mc:gap-2 mc:md:mt-0'>
-                    <Input
-                        className='mc:md:w-64'
-                        placeholder='Search properties...'
-                        aria-label='Search properties'
-                        value={search}
-                        onChange={(event) => setSearch(event.currentTarget.value)}
-                    />
-                    {canEdit && (
+                    {raw === null ? (
+                        <Input
+                            className='mc:md:w-64'
+                            placeholder='Search properties...'
+                            aria-label='Search properties'
+                            value={search}
+                            onChange={(event) => setSearch(event.currentTarget.value)}
+                        />
+                    ) : null}
+                    {canEdit && query.data?.exists && (
+                        <Button.Text disabled={changes > 0 || rawChanged} onClick={() => setRaw(raw === null ? (query.data?.raw ?? '') : null)}>
+                            {raw === null ? 'Edit as file' : 'Back to the editor'}
+                        </Button.Text>
+                    )}
+                    {canEdit && raw === null && (
                         <>
                             <Button.Text disabled={changes === 0 || save.isPending} onClick={() => setDraft({})}>
                                 Discard
                             </Button.Text>
                             <Button disabled={changes === 0 || invalid} isLoading={save.isPending} onClick={() => save.mutate()}>
                                 {changes > 0 ? `Save (${changes})` : 'Save'}
+                            </Button>
+                        </>
+                    )}
+                    {canEdit && raw !== null && (
+                        <>
+                            <Button.Text disabled={!rawChanged || saveRaw.isPending} onClick={() => setRaw(query.data?.raw ?? '')}>
+                                Discard
+                            </Button.Text>
+                            <Button disabled={!rawChanged} isLoading={saveRaw.isPending} onClick={() => saveRaw.mutate()}>
+                                Save
                             </Button>
                         </>
                     )}
@@ -158,6 +189,14 @@ export default function PropertiesScreen() {
                         <EmptyDescription>Start the server once so Minecraft creates the file.</EmptyDescription>
                     </EmptyHeader>
                 </Empty>
+            ) : raw !== null ? (
+                <TextArea
+                    aria-label='server.properties'
+                    className='mc:mt-4 mc:min-h-[32rem] mc:font-mono mc:text-sm'
+                    spellCheck={false}
+                    value={raw}
+                    onChange={(event) => setRaw(event.currentTarget.value)}
+                />
             ) : sections.length === 0 ? (
                 <p className='mc:mt-6 mc:text-center mc:text-sm mc:text-muted-foreground'>No property matches "{search}".</p>
             ) : (

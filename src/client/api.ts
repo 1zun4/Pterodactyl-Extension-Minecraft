@@ -7,6 +7,7 @@ export interface PropertyEntry {
 
 export interface PropertiesResponse {
     exists: boolean;
+    raw: string;
     properties: PropertyEntry[];
 }
 
@@ -130,6 +131,7 @@ const base = (server: string) => `/api/client/servers/${server}/extensions/minec
 
 export const keys = {
     meta: (server: string) => ['minecraft', server, 'meta'] as const,
+    logContent: (server: string, path: string) => ['minecraft', server, 'log', path] as const,
     status: (server: string) => ['minecraft', server, 'status'] as const,
     properties: (server: string) => ['minecraft', server, 'properties'] as const,
     players: (server: string) => ['minecraft', server, 'players'] as const,
@@ -138,7 +140,7 @@ export const keys = {
     logs: (server: string) => ['minecraft', server, 'logs'] as const,
 };
 
-export const getMeta = async (server: string) => (await http.get<{ proxy: boolean }>(`${base(server)}/meta`)).data;
+export const getMeta = async (server: string) => (await http.get<{ proxy: boolean; hidden: boolean }>(`${base(server)}/meta`)).data;
 
 export const getStatus = async (server: string) => (await http.get<ServerStatus>(`${base(server)}/status`)).data;
 
@@ -147,6 +149,9 @@ export const getProperties = async (server: string) =>
 
 export const saveProperties = async (server: string, values: Record<string, string>) =>
     (await http.patch<PropertiesResponse>(`${base(server)}/properties`, { values })).data;
+
+export const saveRawProperties = async (server: string, contents: string) =>
+    (await http.put<PropertiesResponse>(`${base(server)}/properties/raw`, { contents })).data;
 
 export const getPlayers = async (server: string, fresh = false) =>
     (await http.get<PlayersResponse>(`${base(server)}/players`, { params: fresh ? { fresh: 1 } : {} })).data;
@@ -164,6 +169,9 @@ export const setHistory = async (server: string, enabled: boolean) =>
 
 export const getLogs = async (server: string) =>
     (await http.get<{ files: LogFile[]; schedule: CleanupSchedule }>(`${base(server)}/logs`)).data;
+
+export const getLogContent = async (server: string, path: string) =>
+    (await http.get<{ content: string; truncated: boolean }>(`${base(server)}/logs/content`, { params: { path } })).data;
 
 export const shareLog = async (server: string, path: string | null) =>
     (await http.post<{ url: string }>(`${base(server)}/logs/share`, { path })).data;

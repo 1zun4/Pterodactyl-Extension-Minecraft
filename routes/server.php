@@ -16,6 +16,7 @@ Route::get('/status', [StatusController::class, 'show']);
 
 Route::get('/properties', [PropertiesController::class, 'show']);
 Route::patch('/properties', [PropertiesController::class, 'update']);
+Route::put('/properties/raw', [PropertiesController::class, 'replace']);
 
 Route::get('/players', [PlayerController::class, 'index']);
 Route::get('/players/{uuid}', [PlayerController::class, 'show']);
@@ -25,6 +26,7 @@ Route::get('/history', [HistoryController::class, 'show']);
 Route::put('/history', [HistoryController::class, 'update']);
 
 Route::get('/logs', [LogController::class, 'index']);
+Route::get('/logs/content', [LogController::class, 'show']);
 Route::post('/logs/share', [LogController::class, 'share']);
 Route::post('/logs/clean', [LogController::class, 'clean']);
 Route::put('/logs/schedule', [LogController::class, 'updateSchedule']);

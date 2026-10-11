@@ -23,6 +23,8 @@ final readonly class LogFiles
 
     private const int UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 
+    private const int VIEW_MAX_BYTES = 8 * 1024 * 1024;
+
     private const int UPLOAD_MAX_LINES = 25_000;
 
     public function __construct(private Panel $panel, private ExtensionSettingsRegistry $settings) {}
@@ -83,6 +85,29 @@ final readonly class LogFiles
         }
 
         return $archives;
+    }
+
+    /**
+     * A log or crash report as text, unpacked when gzipped, without colour codes. Very long logs keep their end.
+     *
+     * @return array{content: string, truncated: bool}
+     */
+    public function read(Server $server, string $path): array
+    {
+        $content = $this->panel->read($server, $path, self::READ_MAX_BYTES);
+
+        if ($content !== null && str_ends_with($path, '.gz')) {
+            $content = @gzdecode($content, 4 * self::READ_MAX_BYTES);
+        }
+
+        if (! is_string($content)) {
+            throw new RuntimeException('This file could not be read.');
+        }
+
+        $content = (string) preg_replace('/\e\[[0-9;?]*[A-Za-z]/', '', $content);
+        $truncated = mb_strlen($content, '8bit') > self::VIEW_MAX_BYTES;
+
+        return ['content' => $truncated ? mb_substr($content, -self::VIEW_MAX_BYTES, null, '8bit') : $content, 'truncated' => $truncated];
     }
 
     /** Uploads the console or a log file to mclo.gs and returns the share URL. */
