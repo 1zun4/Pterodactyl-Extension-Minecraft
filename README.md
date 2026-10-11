@@ -1,9 +1,9 @@
 # Minecraft for Pterodactyl
 
-[![Release](https://img.shields.io/github/v/release/1zun4/Pterodactyl-Extension-Minecraft?style=flat-square)](https://github.com/1zun4/Pterodactyl-Extension-Minecraft/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/1zun4/Pterodactyl-Extension-Minecraft/total?style=flat-square)](https://github.com/1zun4/Pterodactyl-Extension-Minecraft/releases)
+[![Release](https://img.shields.io/github/v/release/CCBlueX/Pterodactyl-Extension-Minecraft?style=flat-square)](https://github.com/CCBlueX/Pterodactyl-Extension-Minecraft/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/CCBlueX/Pterodactyl-Extension-Minecraft/total?style=flat-square)](https://github.com/CCBlueX/Pterodactyl-Extension-Minecraft/releases)
 [![Pterodactyl](https://img.shields.io/badge/Pterodactyl-2.0-0e4688?style=flat-square)](https://pterodactyl.io)
-[![License](https://img.shields.io/github/license/1zun4/Pterodactyl-Extension-Minecraft?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/github/license/CCBlueX/Pterodactyl-Extension-Minecraft?style=flat-square)](LICENSE)
 
 Players, server.properties and logs of your Minecraft servers, right in the panel.
 
@@ -11,7 +11,7 @@ Players, server.properties and logs of your Minecraft servers, right in the pane
 
 ## Install
 
-1. Download `minecraft-<version>.pteroext` from the [latest release](https://github.com/1zun4/Pterodactyl-Extension-Minecraft/releases/latest).
+1. Download `minecraft-<version>.pteroext` from the [latest release](https://github.com/CCBlueX/Pterodactyl-Extension-Minecraft/releases/latest).
 2. Open **Admin → Extensions**, click **Install** and pick the file.
 3. Enable it and reload the panel.
 
