@@ -10,13 +10,10 @@ import {
     EmptyTitle,
     Input,
     NamedIcon,
-    Select,
     ServerContentBlock,
     ServerError,
     Spinner,
-    Switch,
     TextArea,
-    TitledGreyBox,
     httpErrorToHuman,
     toast,
     useCurrentServerRequired,
@@ -26,8 +23,9 @@ import {
     useServerResources,
 } from '@pterodactyl/sdk';
 import { getProperties, keys, saveProperties, saveRawProperties } from '../api';
-import { SECTIONS, describe, matches, type Property } from '../lib/properties';
-import Pill from '../components/Pill';
+import { SECTIONS, describe, matches } from '../lib/properties';
+import { WIDE, useMediaQuery } from '../lib/media';
+import { CategoryChips, CompactSection, PropertyCard, SaveBar, inRange, type PropertySection } from '../properties/PropertyViews';
 import SectionHeading from '../components/SectionHeading';
 
 export default function PropertiesScreen() {
@@ -38,6 +36,7 @@ export default function PropertiesScreen() {
     const canRestart = useServerPermission('control.restart');
     const state = useServerResources(uuid, (data) => data.attributes.current_state).data;
     const power = useSendServerPower(uuid);
+    const wide = useMediaQuery(WIDE);
 
     const query = useQuery({ queryKey: keys.properties(identifier), queryFn: () => getProperties(identifier) });
     const [draft, setDraft] = useState<Record<string, string>>({});
@@ -82,7 +81,7 @@ export default function PropertiesScreen() {
         return property.control === 'number' && !inRange(property, value);
     });
 
-    const sections = useMemo(() => {
+    const sections = useMemo<PropertySection[]>(() => {
         const properties = (query.data?.properties ?? []).map(({ key, value }) => describe(key, value));
 
         return SECTIONS.map((section) => ({
@@ -104,23 +103,39 @@ export default function PropertiesScreen() {
             return next;
         });
 
+    // The editor and the raw file share one pair of actions.
+    const editing = raw === null;
+    const dirty = editing ? changes > 0 : rawChanged;
+    const saving = editing ? save.isPending : saveRaw.isPending;
+    const discard = () => (editing ? setDraft({}) : setRaw(query.data?.raw ?? ''));
+    const submit = () => (editing ? save.mutate() : saveRaw.mutate());
+    const saveLabel = editing && changes > 0 ? `Save (${changes})` : 'Save';
+
     if (query.isError) {
         return <ServerError title='Could not load server.properties' message={httpErrorToHuman(query.error)} onRetry={() => query.refetch()} />;
     }
 
+    const field = (property: PropertySection['properties'][number]) => ({
+        property,
+        value: draft[property.key] ?? values[property.key] ?? '',
+        changed: property.key in draft,
+        disabled: !canEdit || property.managed === true,
+        onChange: (value: string) => change(property.key, value),
+    });
+
     return (
         <ServerContentBlock title='Properties'>
-            <div className='mc:rounded-sm mc:bg-card mc:p-3 mc:shadow-md mc:md:flex mc:md:items-center mc:md:gap-4'>
+            <div className='mc:rounded-sm mc:bg-card mc:p-3 mc:shadow-md mc:lg:flex mc:lg:items-center mc:lg:gap-4'>
                 <div className='mc:flex-1'>
                     <h2 className='mc:font-header mc:text-sm mc:font-semibold mc:uppercase mc:tracking-wide mc:text-foreground'>server.properties</h2>
                     <p className='mc:mt-1 mc:text-xs mc:text-muted-foreground'>
                         Edit your Minecraft configuration without touching the file manager. Most changes apply after a restart.
                     </p>
                 </div>
-                <div className='mc:mt-3 mc:flex mc:items-center mc:gap-2 mc:md:mt-0'>
-                    {raw === null ? (
+                <div className='mc:mt-3 mc:flex mc:flex-col mc:gap-2 mc:sm:flex-row mc:sm:items-center mc:lg:mt-0'>
+                    {editing ? (
                         <Input
-                            className='mc:md:w-64'
+                            className='mc:min-w-0 mc:sm:flex-1 mc:lg:w-64 mc:lg:flex-none'
                             placeholder='Search properties...'
                             aria-label='Search properties'
                             value={search}
@@ -128,36 +143,24 @@ export default function PropertiesScreen() {
                         />
                     ) : null}
                     {canEdit && query.data?.exists && (
-                        <Button.Text disabled={changes > 0 || rawChanged} onClick={() => setRaw(raw === null ? (query.data?.raw ?? '') : null)}>
-                            {raw === null ? 'Edit as file' : 'Back to the editor'}
-                        </Button.Text>
-                    )}
-                    {canEdit && raw === null && (
-                        <>
-                            <Button.Text disabled={changes === 0 || save.isPending} onClick={() => setDraft({})}>
+                        <div className='mc:flex mc:flex-wrap mc:items-center mc:gap-2 mc:*:whitespace-nowrap mc:sm:flex-nowrap'>
+                            <Button.Text className='mc:mr-auto mc:sm:mr-0' disabled={changes > 0 || rawChanged} onClick={() => setRaw(editing ? (query.data?.raw ?? '') : null)}>
+                                {editing ? 'Edit as file' : 'Back to the editor'}
+                            </Button.Text>
+                            <Button.Text disabled={!dirty || saving} onClick={discard}>
                                 Discard
                             </Button.Text>
-                            <Button disabled={changes === 0 || invalid} isLoading={save.isPending} onClick={() => save.mutate()}>
-                                {changes > 0 ? `Save (${changes})` : 'Save'}
+                            <Button disabled={!dirty || (editing && invalid)} isLoading={saving} onClick={submit}>
+                                {saveLabel}
                             </Button>
-                        </>
-                    )}
-                    {canEdit && raw !== null && (
-                        <>
-                            <Button.Text disabled={!rawChanged || saveRaw.isPending} onClick={() => setRaw(query.data?.raw ?? '')}>
-                                Discard
-                            </Button.Text>
-                            <Button disabled={!rawChanged} isLoading={saveRaw.isPending} onClick={() => saveRaw.mutate()}>
-                                Save
-                            </Button>
-                        </>
+                        </div>
                     )}
                 </div>
             </div>
 
             {pendingRestart && state === 'running' && (
                 <Alert type='info' className='mc:mt-4'>
-                    <div className='mc:flex mc:flex-1 mc:items-center mc:justify-between mc:gap-4'>
+                    <div className='mc:flex mc:flex-1 mc:flex-wrap mc:items-center mc:justify-between mc:gap-x-4 mc:gap-y-2'>
                         <span>Restart the server to apply your changes.</span>
                         {canRestart && (
                             <Button
@@ -189,7 +192,7 @@ export default function PropertiesScreen() {
                         <EmptyDescription>Start the server once so Minecraft creates the file.</EmptyDescription>
                     </EmptyHeader>
                 </Empty>
-            ) : raw !== null ? (
+            ) : !editing ? (
                 <TextArea
                     aria-label='server.properties'
                     className='mc:mt-4 mc:min-h-[32rem] mc:font-mono mc:text-sm'
@@ -199,102 +202,36 @@ export default function PropertiesScreen() {
                 />
             ) : sections.length === 0 ? (
                 <p className='mc:mt-6 mc:text-center mc:text-sm mc:text-muted-foreground'>No property matches "{search}".</p>
-            ) : (
+            ) : wide ? (
                 sections.map((section, index) => (
                     <section key={section.id}>
                         <SectionHeading first={index === 0}>{section.title}</SectionHeading>
                         <div className='mc:grid mc:gap-4 mc:md:grid-cols-2 mc:lg:grid-cols-3'>
                             {section.properties.map((property) => (
-                                <PropertyCard
-                                    key={property.key}
-                                    property={property}
-                                    value={draft[property.key] ?? values[property.key] ?? ''}
-                                    changed={property.key in draft}
-                                    disabled={!canEdit || property.managed === true}
-                                    onChange={(value) => change(property.key, value)}
-                                />
+                                <PropertyCard key={property.key} {...field(property)} />
                             ))}
                         </div>
                     </section>
                 ))
+            ) : (
+                <>
+                    <CategoryChips sections={sections} />
+                    {sections.map((section, index) => (
+                        <CompactSection key={section.id} section={section} first={index === 0} field={field} />
+                    ))}
+                </>
+            )}
+
+            {!wide && canEdit && dirty && (
+                <SaveBar
+                    message={editing ? `${changes} unsaved ${changes === 1 ? 'change' : 'changes'}` : 'Unsaved changes'}
+                    saveLabel={saveLabel}
+                    saving={saving}
+                    invalid={editing && invalid}
+                    onDiscard={discard}
+                    onSave={submit}
+                />
             )}
         </ServerContentBlock>
     );
-}
-
-interface CardProps {
-    property: Property;
-    value: string;
-    changed: boolean;
-    disabled: boolean;
-    onChange: (value: string) => void;
-}
-
-function PropertyCard({ property, value, changed, disabled, onChange }: CardProps) {
-    return (
-        <TitledGreyBox
-            title={
-                <p className='mc:flex mc:items-center mc:gap-2 mc:text-sm mc:uppercase'>
-                    <span className='mc:truncate'>{property.label}</span>
-                    {property.managed && <Pill>Managed</Pill>}
-                    {changed && <Pill tone='warning'>Changed</Pill>}
-                </p>
-            }
-        >
-            <PropertyControl property={property} value={value} disabled={disabled} onChange={onChange} />
-            <p className='mc:mt-1 mc:text-xs mc:text-muted-foreground'>
-                {property.managed ? 'Set by the panel from the server allocation.' : property.description}
-                {property.description || property.managed ? ' ' : ''}
-                <code className='mc:font-mono mc:opacity-70'>{property.key}</code>
-            </p>
-        </TitledGreyBox>
-    );
-}
-
-function PropertyControl({ property, value, disabled, onChange }: Omit<CardProps, 'changed'>) {
-    switch (property.control) {
-        case 'switch':
-            return <Switch aria-label={property.label} checked={value === 'true'} disabled={disabled} onChange={(checked) => onChange(checked ? 'true' : 'false')} />;
-        case 'select': {
-            const options = property.options ?? [];
-
-            return (
-                <Select
-                    value={value}
-                    disabled={disabled}
-                    onChange={(selected) => onChange(String(selected))}
-                    options={[...(options.includes(value) ? [] : [value]), ...options].map((option) => ({ value: option, label: option || 'Default' }))}
-                />
-            );
-        }
-        case 'number':
-            return (
-                <Input
-                    aria-label={property.label}
-                    inputMode='numeric'
-                    autoComplete='off'
-                    value={value}
-                    readOnly={disabled}
-                    $hasError={!inRange(property, value)}
-                    onChange={(event) => /^-?\d*$/.test(event.currentTarget.value) && onChange(event.currentTarget.value)}
-                />
-            );
-        default:
-            return (
-                <Input
-                    aria-label={property.label}
-                    type={property.control === 'password' ? 'password' : 'text'}
-                    autoComplete='off'
-                    value={value}
-                    readOnly={disabled}
-                    onChange={(event) => onChange(event.currentTarget.value)}
-                />
-            );
-    }
-}
-
-function inRange(property: Property, value: string): boolean {
-    const number = Number(value);
-
-    return value !== '' && value !== '-' && (property.min === undefined || number >= property.min) && (property.max === undefined || number <= property.max);
 }

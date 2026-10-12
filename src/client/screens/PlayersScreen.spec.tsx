@@ -31,6 +31,8 @@ afterEach(() => {
     cleanup();
     host?.dispose();
     host = undefined;
+    Reflect.deleteProperty(window, 'matchMedia');
+    Reflect.deleteProperty(Element.prototype, 'scrollIntoView');
 });
 
 function renderScreen(permissions: string[]) {
@@ -64,4 +66,19 @@ test('shows moderation actions only with the permission', async () => {
     expect(await screen.findByText('Moderation')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'De-op' })).toBeTruthy();
     expect(screen.queryByText('Inventory & Effects')).toBeNull();
+});
+
+test('brings the details into view after picking a player on phones', async () => {
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(Element.prototype, 'scrollIntoView', { configurable: true, value: scrollIntoView });
+    Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        value: (query: string) => ({ matches: false, media: query, addEventListener: () => undefined, removeEventListener: () => undefined }),
+    });
+    renderScreen(['ext.minecraft.players-read']);
+
+    expect(await screen.findByText('Pick a player from the list to see their inventory, statistics and actions.')).toBeTruthy();
+    fireEvent.click(screen.getByText('Notch'));
+
+    await vi.waitFor(() => expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' }));
 });

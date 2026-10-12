@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
     Empty,
     EmptyDescription,
@@ -19,12 +19,23 @@ import PlayerPanel from '../players/PlayerPanel';
 import { FILTERS, FilterChips, PlayerList, type Filter } from '../players/PlayerList';
 import ServerOverview from '../players/ServerOverview';
 import { usePlayers } from '../players/hooks';
+import { WIDE, matchesMedia } from '../lib/media';
 
 export default function PlayersScreen() {
     const players = usePlayers();
     const [filter, setFilter] = useState<Filter>('all');
     const [search, setSearch] = useState('');
     const [selected, setSelected] = useState<string | null>(null);
+    const details = useRef<HTMLDivElement>(null);
+
+    // In the stacked layout the details sit below the list, so bring them into view after a pick.
+    const pick = (key: string) => {
+        setSelected(key);
+
+        if (!matchesMedia(WIDE)) {
+            requestAnimationFrame(() => details.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+        }
+    };
 
     const list = players.data?.players ?? [];
     const counts = useMemo(
@@ -64,24 +75,26 @@ export default function PlayersScreen() {
                             ) : (
                                 <>
                                     <Input placeholder='Search players...' aria-label='Search players' value={search} onChange={(event) => setSearch(event.currentTarget.value)} />
-                                    <PlayerList players={visible} selected={selected} onSelect={(player) => setSelected(player.uuid ?? player.name)} />
+                                    <PlayerList players={visible} selected={selected} onSelect={(player) => pick(player.uuid ?? player.name)} />
                                     <AddPlayer />
                                 </>
                             )}
                         </div>
-                        {current ? (
-                            <PlayerPanel key={selected} player={current} onlinePlayers={onlineNames} />
-                        ) : (
-                            <Empty className='mc:border mc:bg-card'>
-                                <EmptyHeader>
-                                    <EmptyMedia variant='icon'>
-                                        <NamedIcon name='user-round' />
-                                    </EmptyMedia>
-                                    <EmptyTitle>Select a player</EmptyTitle>
-                                    <EmptyDescription>Pick a player on the left to see their inventory, statistics and actions.</EmptyDescription>
-                                </EmptyHeader>
-                            </Empty>
-                        )}
+                        <div ref={details} className='mc:grid mc:min-w-0 mc:scroll-mt-4 mc:grid-cols-1'>
+                            {current ? (
+                                <PlayerPanel key={selected} player={current} onlinePlayers={onlineNames} />
+                            ) : (
+                                <Empty className='mc:border mc:bg-card'>
+                                    <EmptyHeader>
+                                        <EmptyMedia variant='icon'>
+                                            <NamedIcon name='user-round' />
+                                        </EmptyMedia>
+                                        <EmptyTitle>Select a player</EmptyTitle>
+                                        <EmptyDescription>Pick a player from the list to see their inventory, statistics and actions.</EmptyDescription>
+                                    </EmptyHeader>
+                                </Empty>
+                            )}
+                        </div>
                     </div>
                     <div className='mc:mt-6'>
                         <Activity />

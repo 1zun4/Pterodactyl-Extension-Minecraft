@@ -42,10 +42,10 @@ export default function Activity() {
                 </p>
             ) : (
                 <div className='mc:overflow-x-auto'>
-                    <div className='mc:grid mc:min-w-[36rem] mc:grid-cols-[2.5rem_repeat(24,minmax(0,1fr))] mc:gap-0.5 mc:text-[0.65rem] mc:text-muted-foreground'>
+                    <div className='mc:grid mc:min-w-[16rem] mc:grid-cols-[2rem_repeat(24,minmax(0,1fr))] mc:gap-px mc:text-[0.65rem] mc:text-muted-foreground mc:sm:min-w-[36rem] mc:sm:grid-cols-[2.5rem_repeat(24,minmax(0,1fr))] mc:sm:gap-0.5'>
                         <span />
                         {Array.from({ length: 24 }, (_, hour) => (
-                            <span key={hour} className='mc:text-center'>
+                            <span key={hour} className={`mc:text-center ${hour % 6 === 0 ? '' : 'mc:invisible mc:sm:visible'}`}>
                                 {hour % 3 === 0 ? hour : ''}
                             </span>
                         ))}
@@ -66,7 +66,7 @@ function Row({ day, row, max }: { day: string; row: number[]; max: number }) {
             {row.map((value, hour) => (
                 <Tooltip key={hour} content={`${day} ${hour}:00 · ${value.toFixed(1)} players`}>
                     <span
-                        className='mc:h-4 mc:rounded-[2px] mc:bg-primary'
+                        className='mc:h-3 mc:rounded-[2px] mc:bg-primary mc:sm:h-4'
                         style={{ opacity: max > 0 && value > 0 ? 0.15 + 0.85 * (value / max) : 0.06 }}
                     />
                 </Tooltip>

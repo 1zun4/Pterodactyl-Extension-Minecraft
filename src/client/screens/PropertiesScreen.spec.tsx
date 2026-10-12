@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { serverResourcesQueryOptions } from '@pterodactyl/sdk';
 import { createExtensionTestHost, createTestServer } from '@pterodactyl/sdk/testing';
 import PropertiesScreen from './PropertiesScreen';
@@ -23,7 +23,15 @@ afterEach(() => {
     cleanup();
     host?.dispose();
     host = undefined;
+    Reflect.deleteProperty(window, 'matchMedia');
 });
+
+function usePhoneLayout() {
+    Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        value: (query: string) => ({ matches: false, media: query, addEventListener: () => undefined, removeEventListener: () => undefined }),
+    });
+}
 
 function renderScreen(permissions: string[]) {
     const server = createTestServer({ uuid: 'f6b9e3a2-0000-4000-8000-000000000001', owner: false, permissions, eggFeatures: ['eula'] });
@@ -65,4 +73,24 @@ test('hides saving without the update permission', async () => {
 
     await screen.findByDisplayValue('A Minecraft Server');
     expect(screen.queryByRole('button', { name: /Save/ })).toBeNull();
+});
+
+test('uses compact rows, category chips and a sticky save bar on phones', async () => {
+    usePhoneLayout();
+    renderScreen(['ext.minecraft.properties-read', 'ext.minecraft.properties-update']);
+
+    expect(await screen.findByDisplayValue('A Minecraft Server')).toBeTruthy();
+    expect(screen.getByRole('navigation', { name: 'Categories' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Gameplay 2' })).toBeTruthy();
+    expect(screen.getByText('MOTD').tagName).toBe('LABEL');
+    expect(screen.queryByRole('region', { name: 'Unsaved changes' })).toBeNull();
+
+    fireEvent.change(screen.getByLabelText('MOTD'), { target: { value: 'Welcome' } });
+
+    const bar = screen.getByRole('region', { name: 'Unsaved changes' });
+    expect(within(bar).getByText('1 unsaved change')).toBeTruthy();
+
+    fireEvent.click(within(bar).getByRole('button', { name: 'Discard' }));
+    expect(screen.getByDisplayValue('A Minecraft Server')).toBeTruthy();
+    expect(screen.queryByRole('region', { name: 'Unsaved changes' })).toBeNull();
 });

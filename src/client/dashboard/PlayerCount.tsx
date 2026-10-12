@@ -20,9 +20,15 @@ export default function PlayerCount({ data: server }: { data: SdkServer }) {
         return null;
     }
 
+    // Shares the row with the server name and other badges, so it stays as narrow as its numbers on phones.
     return (
-        <span className='mc:ml-3 mc:inline-flex mc:shrink-0 mc:items-center mc:gap-1 mc:rounded-full mc:bg-muted mc:px-2 mc:py-0.5 mc:text-xs mc:text-muted-foreground' title='Players online'>
-            <NamedIcon name='users' size={12} />
+        <span
+            className='mc:ml-2 mc:inline-flex mc:shrink mc:items-center mc:gap-1 mc:whitespace-nowrap mc:rounded-full mc:bg-muted mc:px-1.5 mc:py-0.5 mc:text-xs mc:leading-4 mc:tabular-nums mc:text-muted-foreground mc:sm:ml-3 mc:sm:px-2'
+            title='Players online'
+        >
+            <span className='mc:hidden mc:sm:inline-flex'>
+                <NamedIcon name='users' size={12} />
+            </span>
             {status.data.players}/{status.data.max}
         </span>
     );
