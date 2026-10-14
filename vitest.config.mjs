@@ -7,7 +7,7 @@ export default defineConfig({
     test: {
         include: ['src/client/**/*.spec.{ts,tsx}'],
         environment: 'jsdom',
-        setupFiles: [pterodactylTestSetup],
+        setupFiles: [pterodactylTestSetup, './vitest.setup.mjs'],
         // Keeps the SDK runtime on the same React and TanStack Query copies when it is installed as a copy.
         server: { deps: { inline: [/@pterodactyl\/sdk/] } },
     },
