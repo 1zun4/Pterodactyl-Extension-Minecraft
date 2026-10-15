@@ -30,7 +30,7 @@ export default definePterodactylExtension({
         screens.register('properties', () => import('./screens/PropertiesScreen'), { visible: useIsGameServer });
         screens.register('logs', () => import('./screens/LogsScreen'), { visible: useIsShown });
 
-        slots.register('server.console.power.after', LogTools);
+        slots.register('server.console.before', LogTools);
         slots.register('dashboard.serverRow.name.after', PlayerCount);
     },
 });
